@@ -25,4 +25,4 @@ jobs:
       - name: Run mypy
         run: uv run mypy src packages
       - name: Run pytest
-        run: uv run pytest tests/
+        run: Run: PYTHONPATH=. uv run pytest tests/
