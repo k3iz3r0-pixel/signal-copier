@@ -25,3 +25,6 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "ruff>=0.16.5",
 ]
+
+[tool.mypy]
+explicit_package_bases = true
