@@ -3,17 +3,37 @@
 Per design Section 22 / 26: serialization framework deferred.
 This module verifies nothing beyond the approved canonical-value contract
 has been implemented and documents deferred behavior explicitly."""
-from packages.signal_core.domain import SignalRevision, SignalEvent, SignalInstruction, SignalIdentity, canonical_fingerprint
-from packages.signal_core.value_objects import Price, PriceRange, Instrument, ProviderSource
-from packages.signal_core.enums import LifecycleState, SignalStatus, TradeDirection, EventType, InstructionType
-from decimal import Decimal
+
 from datetime import UTC, datetime
+from decimal import Decimal
 from uuid import uuid4
+
+from packages.signal_core.domain import (
+    SignalEvent,
+    SignalIdentity,
+    SignalInstruction,
+    SignalRevision,
+    canonical_fingerprint,
+)
+from packages.signal_core.enums import (
+    EventType,
+    InstructionType,
+    LifecycleState,
+    SignalStatus,
+    TradeDirection,
+)
+from packages.signal_core.value_objects import (
+    Price,
+    ProviderSource,
+)
 
 
 def test_serialization_not_implemented_beyond_canonical_fingerprint() -> None:
     """The only deterministic serialization mechanism in Phase 1 is canonical_fingerprint()."""
-    snapshot = (("status", SignalStatus.ACTIVE), ("price", Price(value=Decimal("100"))),)
+    snapshot = (
+        ("status", SignalStatus.ACTIVE),
+        ("price", Price(value=Decimal(100))),
+    )
     fp = canonical_fingerprint(snapshot)
     assert isinstance(fp, str)
     assert len(fp) == 64
@@ -27,29 +47,35 @@ def test_serialization_deferred_documented() -> None:
         logical_signal_id=uuid4(),
         provider_identity=ProviderSource(provider_name="test", signal_reference="t"),
     )
-    event = SignalEvent(
+    SignalEvent(
         event_id=uuid4(),
         signal_identity=identity,
         event_type=EventType.CREATED,
         timestamp_utc=datetime(2024, 1, 1, tzinfo=UTC),
     )
     # Event payload uses frozen tuple; no dict serialization framework.
-    instruction = SignalInstruction(
+    SignalInstruction(
         instruction_type=InstructionType.OPEN,
         signal_identity=identity,
         created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
     )
     # No external serialization library dependency added.
-    pass
 
 
 def test_reconstruction_from_snapshot_not_implemented() -> None:
     """Replay/reconstruction framework is deferred; only frozen snapshot mapping
     exists as an independent audit artifact."""
-    snapshot = (("direction", TradeDirection.BUY), ("lifecycle_state", LifecycleState.ACTIVE))
+    snapshot = (
+        ("direction", TradeDirection.BUY),
+        ("lifecycle_state", LifecycleState.ACTIVE),
+    )
     rev = SignalRevision(
-        revision_id=uuid4(), logical_signal_id=uuid4(), revision_number=1,
-        previous_revision_id=None, canonical_snapshot=snapshot, fingerprint="ignored",
+        revision_id=uuid4(),
+        logical_signal_id=uuid4(),
+        revision_number=1,
+        previous_revision_id=None,
+        canonical_snapshot=snapshot,
+        fingerprint="ignored",
         created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
     )
     # Snapshot is independently inspectable (design Section 3.12); replay logic deferred.

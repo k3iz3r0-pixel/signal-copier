@@ -1,22 +1,20 @@
 """Benchmark fixtures for Phase 1 Step 9 — performance baseline.
 Standard library only; deterministic inputs; no new dependencies."""
+
 from datetime import UTC, datetime
 from decimal import Decimal
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from packages.signal_core.domain import (
     Signal,
-    SignalEvent,
     SignalIdentity,
     SignalInstruction,
     SignalRevision,
-    canonical_fingerprint,
 )
 from packages.signal_core.enums import (
     AssetClass,
     EntryGeometry,
     EntryTrigger,
-    EventType,
     InstructionType,
     LifecycleState,
     SignalStatus,
@@ -25,10 +23,8 @@ from packages.signal_core.enums import (
 from packages.signal_core.value_objects import (
     Instrument,
     Price,
-    PriceRange,
     ProviderSource,
 )
-
 
 # Fixture A: Minimal signal (smallest valid)
 MINIMAL_SIGNAL = Signal(
@@ -71,16 +67,18 @@ NORMAL_SIGNAL = Signal(
 
 # Fixture C: Large canonical snapshot (many fields in snapshot)
 LARGE_SNAPSHOT = tuple(
-    (f"field_{i}", Price(value=Decimal(str(i))))
-    for i in range(1, 51)
+    (f"field_{i}", Price(value=Decimal(str(i)))) for i in range(1, 51)
 )
 
 # Fixture D: Deep nested canonical snapshot
 NESTED_SNAPSHOT = (
-    ("nested", (
-        ("level2", (Price(value=Decimal("100")), Price(value=Decimal("150")))),
-        ("level3", (("deep", Price(value=Decimal("200"))),)),
-    )),
+    (
+        "nested",
+        (
+            ("level2", (Price(value=Decimal(100)), Price(value=Decimal(150)))),
+            ("level3", (("deep", Price(value=Decimal(200))),)),
+        ),
+    ),
 )
 
 # Fixture E: Multi-instruction (several instructions referencing same identity)
@@ -116,10 +114,8 @@ for i in range(1, 6):
 REVISION_CHAIN_F = tuple(_REVISION_CHAIN_LIST)
 
 # Fixture for fingerprint scaling
-SNAPSHOTS_SMALL = (("k", Price(value=Decimal("1"))),)
-SNAPSHOTS_MEDIUM = tuple(
-    (f"k{i}", Price(value=Decimal(str(i)))) for i in range(1, 21)
-)
+SNAPSHOTS_SMALL = (("k", Price(value=Decimal(1))),)
+SNAPSHOTS_MEDIUM = tuple((f"k{i}", Price(value=Decimal(str(i)))) for i in range(1, 21))
 SNAPSHOTS_LARGE = tuple(
     (f"k{i}", Price(value=Decimal(str(i * 0.01)))) for i in range(1, 101)
 )

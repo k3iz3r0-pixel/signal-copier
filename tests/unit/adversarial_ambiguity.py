@@ -1,5 +1,5 @@
 """Adversarial Category 5 — Ambiguity / partial / unspecified attacks."""
-from packages.signal_core.enums import AssetClass
+
 from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
@@ -8,6 +8,7 @@ import pytest
 
 from packages.signal_core.domain import Signal, SignalIdentity
 from packages.signal_core.enums import (
+    AssetClass,
     EntryGeometry,
     EntryTrigger,
     LifecycleState,
@@ -17,6 +18,7 @@ from packages.signal_core.enums import (
 from packages.signal_core.value_objects import (
     Instrument,
     Price,
+    PriceRange,
     ProviderSource,
 )
 
@@ -126,7 +128,9 @@ class TestUnspecifiedTriggerPreserved:
             direction=TradeDirection.BUY,
             entry_geometry=EntryGeometry.RANGE,
             entry_trigger=EntryTrigger.UNSPECIFIED,
-            entry_range=PriceRange(low=Price(value=Decimal("1.0")), high=Price(value=Decimal("1.2"))),
+            entry_range=PriceRange(
+                low=Price(value=Decimal("1.0")), high=Price(value=Decimal("1.2"))
+            ),
             lifecycle_state=LifecycleState.ACTIVE,
             status=SignalStatus.COMPLETE,
             created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),

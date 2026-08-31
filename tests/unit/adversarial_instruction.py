@@ -1,13 +1,14 @@
 """Adversarial Category 10 — Instruction attacks (all 12 types)."""
+
 from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
 
 import pytest
 
-from packages.signal_core.domain import SignalInstruction, SignalIdentity
+from packages.signal_core.domain import SignalIdentity, SignalInstruction
 from packages.signal_core.enums import InstructionType
-from packages.signal_core.value_objects import ProviderSource, Price
+from packages.signal_core.value_objects import Price, ProviderSource
 
 
 def identity() -> SignalIdentity:
@@ -134,7 +135,9 @@ class TestInstructionIdentityAndBrokerIsolation:
             created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
         )
         assert isinstance(instruction.signal_identity, SignalIdentity)
-        assert instruction.signal_identity != identity  # identity refers to same logical signal, not embedded full Signal
+        assert (
+            instruction.signal_identity != identity
+        )  # identity refers to same logical signal, not embedded full Signal
 
     def test_all_12_instruction_types_no_broker_leakage(self) -> None:
         for it in InstructionType:

@@ -1,13 +1,14 @@
 """Adversarial Category 3 — Entry geometry attacks."""
-from packages.signal_core.enums import AssetClass
+
 from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
 
 import pytest
 
-from packages.signal_core.domain import Signal
+from packages.signal_core.domain import Signal, SignalIdentity
 from packages.signal_core.enums import (
+    AssetClass,
     EntryGeometry,
     EntryTrigger,
     LifecycleState,
@@ -20,8 +21,6 @@ from packages.signal_core.value_objects import (
     PriceRange,
     ProviderSource,
 )
-
-from packages.signal_core.domain import SignalIdentity
 
 
 def identity() -> SignalIdentity:
@@ -58,7 +57,9 @@ class TestMarketGeometryAdversarial:
                 direction=TradeDirection.BUY,
                 entry_geometry=EntryGeometry.MARKET,
                 entry_trigger=EntryTrigger.MARKET,
-                entry_range=PriceRange(low=Price(value=Decimal("1")), high=Price(value=Decimal("2"))),
+                entry_range=PriceRange(
+                    low=Price(value=Decimal(1)), high=Price(value=Decimal(2))
+                ),
                 lifecycle_state=LifecycleState.ACTIVE,
                 status=SignalStatus.COMPLETE,
                 created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
@@ -72,7 +73,7 @@ class TestMarketGeometryAdversarial:
                 direction=TradeDirection.BUY,
                 entry_geometry=EntryGeometry.MARKET,
                 entry_trigger=EntryTrigger.MARKET,
-                entry_levels=(Price(value=Decimal("1")),),
+                entry_levels=(Price(value=Decimal(1)),),
                 lifecycle_state=LifecycleState.ACTIVE,
                 status=SignalStatus.COMPLETE,
                 created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
@@ -102,7 +103,9 @@ class TestSingleGeometryAdversarial:
                 entry_geometry=EntryGeometry.SINGLE,
                 entry_trigger=EntryTrigger.LIMIT,
                 entry_price=Price(value=Decimal("1.1")),
-                entry_range=PriceRange(low=Price(value=Decimal("1")), high=Price(value=Decimal("2"))),
+                entry_range=PriceRange(
+                    low=Price(value=Decimal(1)), high=Price(value=Decimal(2))
+                ),
                 lifecycle_state=LifecycleState.ACTIVE,
                 status=SignalStatus.COMPLETE,
                 created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
@@ -147,7 +150,9 @@ class TestRangeGeometryAdversarial:
                 entry_geometry=EntryGeometry.RANGE,
                 entry_trigger=EntryTrigger.LIMIT,
                 entry_price=Price(value=Decimal("1.1")),
-                entry_range=PriceRange(low=Price(value=Decimal("1")), high=Price(value=Decimal("2"))),
+                entry_range=PriceRange(
+                    low=Price(value=Decimal(1)), high=Price(value=Decimal(2))
+                ),
                 lifecycle_state=LifecycleState.ACTIVE,
                 status=SignalStatus.COMPLETE,
                 created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
@@ -178,8 +183,8 @@ class TestMultipleGeometryAdversarial:
                 entry_geometry=EntryGeometry.MULTIPLE,
                 entry_trigger=EntryTrigger.LIMIT,
                 entry_levels=(
-                    Price(value=Decimal("2")),
-                    Price(value=Decimal("1")),
+                    Price(value=Decimal(2)),
+                    Price(value=Decimal(1)),
                 ),
                 lifecycle_state=LifecycleState.ACTIVE,
                 status=SignalStatus.COMPLETE,
@@ -195,8 +200,8 @@ class TestMultipleGeometryAdversarial:
                 entry_geometry=EntryGeometry.MULTIPLE,
                 entry_trigger=EntryTrigger.LIMIT,
                 entry_levels=(
-                    Price(value=Decimal("1")),
-                    Price(value=Decimal("1")),
+                    Price(value=Decimal(1)),
+                    Price(value=Decimal(1)),
                 ),
                 lifecycle_state=LifecycleState.ACTIVE,
                 status=SignalStatus.COMPLETE,

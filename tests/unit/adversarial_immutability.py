@@ -1,14 +1,33 @@
 """Adversarial Category 11 — Deep immutability attacks."""
-from packages.signal_core.enums import AssetClass
+
 from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
 
 import pytest
 
-from packages.signal_core.domain import Signal, SignalEvent, SignalInstruction, SignalIdentity, SignalRevision
-from packages.signal_core.enums import InstructionType, EventType, LifecycleState, SignalStatus, TradeDirection, EntryGeometry, EntryTrigger
-from packages.signal_core.value_objects import Price, PriceRange, Instrument, ProviderSource
+from packages.signal_core.domain import (
+    Signal,
+    SignalEvent,
+    SignalIdentity,
+    SignalInstruction,
+)
+from packages.signal_core.enums import (
+    AssetClass,
+    EntryGeometry,
+    EntryTrigger,
+    EventType,
+    InstructionType,
+    LifecycleState,
+    SignalStatus,
+    TradeDirection,
+)
+from packages.signal_core.value_objects import (
+    Instrument,
+    Price,
+    PriceRange,
+    ProviderSource,
+)
 
 
 def identity() -> SignalIdentity:
@@ -75,7 +94,9 @@ class TestDeepImmutabilityInstruction:
         instruction = SignalInstruction(
             instruction_type=InstructionType.MOVE_TP,
             signal_identity=identity(),
-            payload=(("new_tp", (Price(value=Decimal("160")), Price(value=Decimal("170")))),),
+            payload=(
+                ("new_tp", (Price(value=Decimal(160)), Price(value=Decimal(170)))),
+            ),
             created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
         )
         with pytest.raises(AttributeError):
@@ -100,7 +121,7 @@ class TestDeepImmutabilityEvent:
             signal_identity=identity(),
             event_type=EventType.REVISED,
             timestamp_utc=datetime(2024, 1, 1, tzinfo=UTC),
-            event_payload=(("nested", (Price(value=Decimal("100")),)),),
+            event_payload=(("nested", (Price(value=Decimal(100)),)),),
         )
         with pytest.raises(AttributeError):
             event.event_payload += ((),)  # type: ignore[operator]
@@ -113,9 +134,9 @@ class TestDeepImmutabilityValueObjects:
             p.value = Decimal("2.2")  # type: ignore[misc]
 
     def test_price_range_immutable(self) -> None:
-        pr = PriceRange(low=Price(value=Decimal("1")), high=Price(value=Decimal("2")))
+        pr = PriceRange(low=Price(value=Decimal(1)), high=Price(value=Decimal(2)))
         with pytest.raises(AttributeError):
-            pr.low = Price(value=Decimal("3"))  # type: ignore[misc]
+            pr.low = Price(value=Decimal(3))  # type: ignore[misc]
 
     def test_instrument_immutable(self) -> None:
         inst = Instrument(canonical_symbol="EURUSD", asset_class=AssetClass.FOREX)
@@ -134,4 +155,5 @@ class TestNestedMutableReachability:
     def test_tuple_containing_dict_rejected_by_domain(self) -> None:
         with pytest.raises(TypeError, match="unsupported"):
             from packages.signal_core.domain import _validate_canonical_value
+
             _validate_canonical_value((("bad", {"nested": True}),))

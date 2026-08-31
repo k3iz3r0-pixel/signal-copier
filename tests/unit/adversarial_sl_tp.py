@@ -1,13 +1,14 @@
 """Adversarial Category 4 — Stop Loss / Take Profit attacks."""
-from packages.signal_core.enums import AssetClass
+
 from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import uuid4
 
 import pytest
 
-from packages.signal_core.domain import Signal
+from packages.signal_core.domain import Signal, SignalIdentity
 from packages.signal_core.enums import (
+    AssetClass,
     EntryGeometry,
     EntryTrigger,
     LifecycleState,
@@ -19,7 +20,6 @@ from packages.signal_core.value_objects import (
     Price,
     ProviderSource,
 )
-from packages.signal_core.domain import SignalIdentity
 
 
 def identity() -> SignalIdentity:

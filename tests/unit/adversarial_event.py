@@ -1,4 +1,5 @@
 """Adversarial Category 9 — Event attacks."""
+
 from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
@@ -7,7 +8,7 @@ import pytest
 
 from packages.signal_core.domain import SignalEvent, SignalIdentity
 from packages.signal_core.enums import EventType
-from packages.signal_core.value_objects import ProviderSource, Price
+from packages.signal_core.value_objects import Price, ProviderSource
 
 
 def identity() -> SignalIdentity:
@@ -56,12 +57,21 @@ class TestEventAdversarial:
 
     def test_non_utc_timestamp_rejected(self) -> None:
         import datetime
+
         with pytest.raises(ValueError, match="UTC"):
             SignalEvent(
                 event_id=uuid4(),
                 signal_identity=identity(),
                 event_type=EventType.CREATED,
-                timestamp_utc=datetime(2024, 1, 1, 0, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=3))),
+                timestamp_utc=datetime(
+                    2024,
+                    1,
+                    1,
+                    0,
+                    0,
+                    0,
+                    tzinfo=datetime.timezone(datetime.timedelta(hours=3)),
+                ),
             )
 
     def test_previous_revision_id_not_uuid_string(self) -> None:
@@ -130,7 +140,10 @@ class TestEventAdversarial:
             signal_identity=identity(),
             event_type=EventType.SL_MOVED,
             timestamp_utc=datetime(2024, 5, 5, 0, 0, 0, tzinfo=UTC),
-            event_payload=(("prev_sl", Price(value=Decimal("100.00"))), ("new_sl", Price(value=Decimal("95.00")))),
+            event_payload=(
+                ("prev_sl", Price(value=Decimal("100.00"))),
+                ("new_sl", Price(value=Decimal("95.00"))),
+            ),
         )
         assert event.event_payload[0][0] == "prev_sl"
 

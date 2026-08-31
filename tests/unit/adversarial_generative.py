@@ -1,15 +1,19 @@
 """Generative / property-style adversarial assessment (standard library only).
-from packages.signal_core.enums import AssetClass
 
 No Hypothesis or external property-testing dependency added (per AGENTS.md §6.2).
 Deterministic combinatorics used instead."""
-from datetime import UTC, datetime
-from decimal import Decimal
+
 from uuid import uuid4
 
-from packages.signal_core.domain import Signal, SignalIdentity, canonical_fingerprint
-from packages.signal_core.enums import InstructionType, EventType, LifecycleState, SignalStatus, TradeDirection, EntryGeometry, EntryTrigger
-from packages.signal_core.value_objects import Instrument, Price, ProviderSource
+from packages.signal_core.domain import SignalIdentity
+from packages.signal_core.enums import (
+    AssetClass,
+    EntryGeometry,
+    EntryTrigger,
+    LifecycleState,
+    SignalStatus,
+)
+from packages.signal_core.value_objects import Instrument, ProviderSource
 
 
 def identity() -> SignalIdentity:
@@ -24,10 +28,26 @@ def instrument() -> Instrument:
 
 
 # Deterministic combinatoric coverage: every geometry x trigger x status x lifecycle
-GEOMETRIES = [EntryGeometry.MARKET, EntryGeometry.SINGLE, EntryGeometry.RANGE, EntryGeometry.MULTIPLE]
-TRIGGERS = [EntryTrigger.MARKET, EntryTrigger.LIMIT, EntryTrigger.STOP, EntryTrigger.UNSPECIFIED]
+GEOMETRIES = [
+    EntryGeometry.MARKET,
+    EntryGeometry.SINGLE,
+    EntryGeometry.RANGE,
+    EntryGeometry.MULTIPLE,
+]
+TRIGGERS = [
+    EntryTrigger.MARKET,
+    EntryTrigger.LIMIT,
+    EntryTrigger.STOP,
+    EntryTrigger.UNSPECIFIED,
+]
 STATUSES = [SignalStatus.PARTIAL, SignalStatus.COMPLETE, SignalStatus.AMBIGUOUS]
-LIFECYCLES = [LifecycleState.DRAFT, LifecycleState.ACTIVE, LifecycleState.CANCELLED, LifecycleState.EXPIRED, LifecycleState.ARCHIVED]
+LIFECYCLES = [
+    LifecycleState.DRAFT,
+    LifecycleState.ACTIVE,
+    LifecycleState.CANCELLED,
+    LifecycleState.EXPIRED,
+    LifecycleState.ARCHIVED,
+]
 
 
 def test_deterministic_combination_coverage() -> None:
@@ -46,7 +66,5 @@ def test_deterministic_combination_coverage() -> None:
 
 def test_no_new_dependencies() -> None:
     # Confirm standard-library-only approach is preserved.
-    import sys
-    import importlib.util
     # We don't import any non-standard dependency explicitly in signal_core.
     assert True

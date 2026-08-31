@@ -1,13 +1,14 @@
 """Adversarial Category 1 — Signal construction attacks."""
-from packages.signal_core.enums import AssetClass
+
 from datetime import UTC, datetime
 from decimal import Decimal
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
 from packages.signal_core.domain import Signal, SignalIdentity
 from packages.signal_core.enums import (
+    AssetClass,
     EntryGeometry,
     EntryTrigger,
     LifecycleState,
@@ -36,6 +37,7 @@ def instrument() -> Instrument:
 
 
 # --- Wrong types ---
+
 
 class TestSignalWrongTypes:
     def test_identity_must_be_signal_identity(self, identity, instrument) -> None:
@@ -174,7 +176,7 @@ class TestSignalWrongTypes:
                 direction=TradeDirection.BUY,
                 entry_geometry=EntryGeometry.MULTIPLE,
                 entry_trigger=EntryTrigger.LIMIT,
-                entry_levels=[Price(value=Decimal("100"))],
+                entry_levels=[Price(value=Decimal(100))],
                 created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
             )
 
@@ -186,8 +188,8 @@ class TestSignalWrongTypes:
                 direction=TradeDirection.BUY,
                 entry_geometry=EntryGeometry.SINGLE,
                 entry_trigger=EntryTrigger.LIMIT,
-                take_profit_targets=[Price(value=Decimal("110"))],
-                entry_price=Price(value=Decimal("100")),
+                take_profit_targets=[Price(value=Decimal(110))],
+                entry_price=Price(value=Decimal(100)),
                 created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
             )
 
@@ -204,6 +206,7 @@ class TestSignalWrongTypes:
 
     def test_non_utc_aware_rejected(self, identity, instrument) -> None:
         import datetime as dt_mod
+
         with pytest.raises(ValueError, match="UTC"):
             Signal(
                 identity=identity,
@@ -211,11 +214,20 @@ class TestSignalWrongTypes:
                 direction=TradeDirection.BUY,
                 entry_geometry=EntryGeometry.SINGLE,
                 entry_trigger=EntryTrigger.LIMIT,
-                created_at_utc=datetime(2024, 1, 1, 0, 0, 0, tzinfo=dt_mod.timezone(dt_mod.timedelta(hours=5))),
+                created_at_utc=datetime(
+                    2024,
+                    1,
+                    1,
+                    0,
+                    0,
+                    0,
+                    tzinfo=dt_mod.timezone(dt_mod.timedelta(hours=5)),
+                ),
             )
 
 
 # --- Geometry / trigger combinations ---
+
 
 class TestGeometryTriggerCombinations:
     def test_market_has_no_entry_price(self, identity, instrument) -> None:
@@ -298,13 +310,17 @@ class TestGeometryTriggerCombinations:
                 entry_geometry=EntryGeometry.RANGE,
                 entry_trigger=EntryTrigger.LIMIT,
                 entry_price=Price(value=Decimal("1.1")),
-                entry_range=PriceRange(low=Price(value=Decimal("1.0")), high=Price(value=Decimal("1.2"))),
+                entry_range=PriceRange(
+                    low=Price(value=Decimal("1.0")), high=Price(value=Decimal("1.2"))
+                ),
                 lifecycle_state=LifecycleState.ACTIVE,
                 status=SignalStatus.COMPLETE,
                 created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
             )
 
-    def test_multiple_requires_non_empty_levels_and_no_price(self, identity, instrument) -> None:
+    def test_multiple_requires_non_empty_levels_and_no_price(
+        self, identity, instrument
+    ) -> None:
         with pytest.raises(ValueError, match="MULTIPLE"):
             Signal(
                 identity=identity,
@@ -333,7 +349,9 @@ class TestGeometryTriggerCombinations:
                 created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),
             )
 
-    def test_unspecified_preserved_not_defaulted_to_market(self, identity, instrument) -> None:
+    def test_unspecified_preserved_not_defaulted_to_market(
+        self, identity, instrument
+    ) -> None:
         signal = Signal(
             identity=identity,
             instrument=instrument,
@@ -349,6 +367,7 @@ class TestGeometryTriggerCombinations:
 
 
 # --- Empty / duplicate collections ---
+
 
 class TestEmptyDuplicateCollections:
     def test_empty_entry_levels_for_market_is_valid(self, identity, instrument) -> None:
@@ -380,7 +399,9 @@ class TestEmptyDuplicateCollections:
         )
         assert signal.take_profit_targets == ()
 
-    def test_duplicate_tp_values_rejected_by_invariant(self, identity, instrument) -> None:
+    def test_duplicate_tp_values_rejected_by_invariant(
+        self, identity, instrument
+    ) -> None:
         # Note: duplicate TP is enforced by invariant, not by domain construction.
         with pytest.raises(ValueError, match="duplicate"):
             Signal(
@@ -390,7 +411,10 @@ class TestEmptyDuplicateCollections:
                 entry_geometry=EntryGeometry.SINGLE,
                 entry_trigger=EntryTrigger.LIMIT,
                 entry_price=Price(value=Decimal("1.1")),
-                take_profit_targets=(Price(value=Decimal("1.2")), Price(value=Decimal("1.2"))),
+                take_profit_targets=(
+                    Price(value=Decimal("1.2")),
+                    Price(value=Decimal("1.2")),
+                ),
                 lifecycle_state=LifecycleState.ACTIVE,
                 status=SignalStatus.COMPLETE,
                 created_at_utc=datetime(2024, 1, 1, tzinfo=UTC),

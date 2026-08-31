@@ -1,14 +1,13 @@
 """Adversarial Category 8 — Fingerprint / canonicalization attacks."""
-from datetime import datetime
+
 from decimal import Decimal
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
 from packages.signal_core.domain import canonical_fingerprint
-from packages.signal_core.enums import LifecycleState, TradeDirection, EntryGeometry, EntryTrigger, SignalStatus
-from packages.signal_core.value_objects import Price, PriceRange, Instrument
-from packages.signal_core.enums import AssetClass
+from packages.signal_core.enums import AssetClass, SignalStatus, TradeDirection
+from packages.signal_core.value_objects import Instrument, Price, PriceRange
 
 
 class TestFingerprintCanonicalization:
@@ -56,11 +55,27 @@ class TestFingerprintCanonicalization:
         assert isinstance(fp, str) and len(fp) == 64
 
     def test_price_range_object_normalization(self) -> None:
-        fp = canonical_fingerprint((("range", PriceRange(low=Price(value=Decimal("50")), high=Price(value=Decimal("150")))),))
+        fp = canonical_fingerprint(
+            (
+                (
+                    "range",
+                    PriceRange(
+                        low=Price(value=Decimal(50)), high=Price(value=Decimal(150))
+                    ),
+                ),
+            )
+        )
         assert isinstance(fp, str) and len(fp) == 64
 
     def test_instrument_object_normalization(self) -> None:
-        fp = canonical_fingerprint((("inst", Instrument(canonical_symbol="EURUSD", asset_class=AssetClass.FOREX)),))
+        fp = canonical_fingerprint(
+            (
+                (
+                    "inst",
+                    Instrument(canonical_symbol="EURUSD", asset_class=AssetClass.FOREX),
+                ),
+            )
+        )
         assert isinstance(fp, str) and len(fp) == 64
 
     # --- Key ordering independence ---
@@ -77,7 +92,9 @@ class TestFingerprintCanonicalization:
 
     # --- Nested tuple support ---
     def test_nested_tuple_price(self) -> None:
-        fp = canonical_fingerprint((("nested", (Price(value=Decimal("10")), Price(value=Decimal("20")))),))
+        fp = canonical_fingerprint(
+            (("nested", (Price(value=Decimal(10)), Price(value=Decimal(20)))),)
+        )
         assert isinstance(fp, str) and len(fp) == 64
 
     def test_nested_tuple_decimal(self) -> None:
