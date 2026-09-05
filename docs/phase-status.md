@@ -18,7 +18,7 @@ Previous Phase:         Phase 1.1 — Architecture Freeze / Remediation (COMPLET
 Phase 2 Implementation: COMPLETE (adopted Phase 2A–2F scope + output adapter)
 Phase 2 Implementation Approval: GRANTED (owner adoption decision, 2026-09-05)
 Next Phase:             Phase 3 — NOT STARTED, NOT APPROVED
-Release State:          Committed locally; NOT pushed (push requires explicit owner approval)
+Release State:          PUSHED to origin/main (owner release approval, 2026-09-05)
 ```
 
 ## Phase 1 — Signal Core
@@ -151,26 +151,37 @@ authoritative design, Phase 3 work, or the deferred items below.
 
 ### Recorded decisions and deferrals (do not treat as complete)
 
-- MULTI_SIGNAL enforcement: declarative only, exactly per ADR 0013 deviation
-  #9 — aggregation does not consult the `multi_signal` capability flag, and
-  enforcement (e.g. ≥2 executable blocks under `multi_signal=False` ⇒
-  UNSUPPORTED) is explicitly a future owner decision. Nothing beyond the
-  ADR-authorized semantics was implemented.
-- Corpus batch-2 (M14, M15, M18, M29, M28): DEFERRED by owner instruction.
-  Implementation requires explicit owner approval.
-- REPRESENTATIONAL CONFLICT (recorded, NOT resolved): MARKET entry geometry
-  with a preserved entry price (real corpus M24, provider_014) is not
-  representable in the Phase 1 `Signal` model, whose invariant requires
-  `entry_price is None` under MARKET geometry. The adapter returns
-  `NON_SIGNAL("market_geometry_with_entry_not_representable")` and the data
-  remains fully preserved in the `ParseResult`. Resolving this requires an
-  owner decision (Phase 1 model extension ADR, or Phase 3 correlation-side
-  handling). It was deliberately NOT silently resolved by dropping the price
-  or re-labeling the geometry.
+Reconciliation closure (2026-09-05, owner release approval): the Phase 2
+reconciliation objectives are COMPLETE. Final disposition of each recorded
+item:
+
+- OUTPUT ADAPTER (design §25 step 5): IMPLEMENTED and tested (35 focused
+  contract tests; 940 total). The intended parser output contract
+  (ParseResult → Signal | SignalInstruction | explicit non-signal) is
+  complete.
+- MULTI_SIGNAL enforcement: the ADR-0013-authorized semantics (declarative
+  capability; anti-merge outcome; per-block consumption) are COMPLETE.
+  The enforcement policy itself (e.g. ≥2 executable blocks under
+  `multi_signal=False` ⇒ UNSUPPORTED) remains EXPLICITLY RESERVED to the
+  owner by ADR 0013 deviation #9 and is NOT implemented. It was not
+  invented during reconciliation.
+- REPRESENTATIONAL CONFLICT — MARKET geometry with a preserved entry price
+  (real corpus M24, provider_014): remains OPEN. The adapter surfaces it
+  explicitly as `NON_SIGNAL("market_geometry_with_entry_not_representable")`
+  with all data preserved in the `ParseResult`. Resolution requires a
+  Phase 1 model extension ADR or Phase 3 correlation-side handling; neither
+  is authorized as part of Phase 2, and the conflict was deliberately NOT
+  silently resolved by dropping the price or re-labeling the geometry.
+- Corpus batch-2 (M14, M15, M18, M29, M28): remains DEFERRED per the owner's
+  standing instruction ("keep deferred unless explicitly approved"). M28 is
+  additionally unsolvable without corpus expansion (the `EJ` symbol cannot
+  be mapped without inventing financial data).
 - Remaining open design questions: design §23 (TRIGGER_PENDING,
   percent-dependent SL/TP, conditional entry, multi-instrument signals,
   hedged pairs, reverse identity policy, exact edit-delta semantics, symbol
-  mapping, profile versioning/hot-reload).
+  mapping, profile versioning/hot-reload); capability-off rule-mismatch
+  semantics refinement (2B.2 note); 16 pre-existing ruff-format drift files
+  (frozen test files; separate cleanup requires approval).
 
 Phase 2 is NOT production-ready: no Telegram/Discord ingestion, no broker
 adapters, no execution, no strategy, no risk, no database, no Redis, no
