@@ -144,6 +144,9 @@ Development is strictly phase-based.
 
 The currently approved phase must be determined from:
 
+* `docs/phase-status.md` — **authoritative phase-status document** (single
+  source of truth for current phase, current phase status, and approval
+  status of subsequent phases).
 * `AGENTS.md`
 * phase documentation
 * approved phase markers

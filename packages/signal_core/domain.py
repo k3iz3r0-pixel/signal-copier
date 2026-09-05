@@ -94,13 +94,17 @@ def _normalize_for_fingerprint(obj: object) -> object:
 
 
 def _validate_and_normalize_for_fingerprint(obj: object, path: str = "") -> object:
-    """Combined validate-and-normalize pass used exclusively by canonical_fingerprint."""
+    """Combined validate-and-normalize pass used exclusively by canonical_fingerprint.
+
+    Authoritative contract (unified with SignalRevision/Event/Instruction):
+    type validation reuses _validate_canonical_value (ALLOWED_SNAPSHOT_TYPES).
+    Domain value objects (Price, PriceRange, Instrument) are normalized to
+    JSON-serializable primitive tuples for deterministic hashing.
+    """
+    # Authoritative type check: same contract as SignalRevision validator.
+    _validate_canonical_value(obj, path)
     if obj is None:
         return None
-    if isinstance(obj, (list, dict, set)):
-        raise TypeError(
-            f"value at '{path}' has unsupported mutable type {type(obj).__name__}"
-        )
     if isinstance(obj, str):
         return obj
     if isinstance(obj, tuple):
@@ -134,8 +138,13 @@ def _validate_and_normalize_for_fingerprint(obj: object, path: str = "") -> obje
             if hasattr(obj.asset_class, "value")
             else str(obj.asset_class),
         )
+    # ALLOWED_SNAPSHOT_TYPES enum members (TradeDirection, EntryGeometry,
+    # EntryTrigger, LifecycleState, SignalStatus) are normalized to their
+    # string value for deterministic hashing.
     if isinstance(obj, Enum):
         return obj.value
+    # _validate_canonical_value already guaranteed reachability; any
+    # other type would have raised. Defensive guard for future enum additions.
     raise TypeError(f"value at '{path}' has unsupported type {type(obj).__name__}")
 
 
@@ -144,11 +153,22 @@ def canonical_fingerprint(snapshot_tuple: tuple[tuple[str, object], ...]) -> str
 
     Validates that all snapshot values conform to ALLOWED_SNAPSHOT_TYPES
     (same contract as SignalRevision) before computing fingerprint.
+    Rejects duplicate keys in the snapshot tuple (key uniqueness is required
+    for unambiguous canonical representation; JSON dict serialization would
+    otherwise silently keep only the last value for a repeated key, collapsing
+    semantically distinct inputs to the same fingerprint).
     """
+    seen_keys: set[str] = set()
     items: list[tuple[str, object]] = []
     for k, v in snapshot_tuple:
         if not isinstance(k, str):
             raise TypeError(f"snapshot key must be str, got {type(k).__name__}")
+        if k in seen_keys:
+            raise TypeError(
+                f"snapshot contains duplicate key '{k}'; "
+                f"key uniqueness is required for unambiguous canonical representation"
+            )
+        seen_keys.add(k)
         items.append(
             (str(k), _validate_and_normalize_for_fingerprint(v, f"snapshot['{k}']"))
         )
@@ -196,12 +216,25 @@ def _validate_canonical_value(obj: object, path: str = "") -> None:
 def _validate_deep_immutable_payload(
     payload: tuple[tuple[str, object], ...], payload_name: str
 ) -> None:
-    """Validate a payload tuple has deep immutability (no nested mutable structures)."""
+    """Validate a payload tuple has deep immutability (no nested mutable structures)
+    and key uniqueness (no duplicate keys).
+
+    Duplicate keys are rejected because key uniqueness is required for unambiguous
+    canonical representation; allowing duplicates would silently collapse
+    semantically distinct entries during JSON dict serialization.
+    """
     if not isinstance(payload, tuple):
         raise TypeError(f"{payload_name} must be a frozen tuple of (str, object) pairs")
+    seen_keys: set[str] = set()
     for k, v in payload:
         if not isinstance(k, str):
             raise TypeError(f"{payload_name} key must be str, got {type(k).__name__}")
+        if k in seen_keys:
+            raise TypeError(
+                f"{payload_name} contains duplicate key '{k}'; "
+                f"key uniqueness is required for unambiguous canonical representation"
+            )
+        seen_keys.add(k)
         try:
             _validate_canonical_value(v, f"{payload_name}['{k}']")
         except TypeError as e:

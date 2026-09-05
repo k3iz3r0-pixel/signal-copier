@@ -18,9 +18,14 @@ from packages.signal_core.domain import (
 )
 from packages.signal_core.enums import (
     AssetClass,
+    EntryGeometry,
+    EntryTrigger,
     EventType,
     InstructionType,
+    LifecycleState,
     SignalStatus,
+    SourceType,
+    TradeDirection,
 )
 from packages.signal_core.value_objects import (
     Instrument,
@@ -328,3 +333,119 @@ def test_fingerprint_uses_same_validator_as_revision() -> None:
             created_at_utc=datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
         ).fingerprint
     )
+
+
+# ------------------------------------------------------------------
+# Regression: duplicate keys in snapshot tuple must be rejected.
+# Two semantically different snapshots with the same duplicated key
+# must NOT collapse to the same fingerprint. Without this guard, JSON
+# dict serialization silently keeps only the last value, destroying
+# semantic distinction.
+# ------------------------------------------------------------------
+
+
+def test_duplicate_key_in_snapshot_rejected_by_fingerprint() -> None:
+    """Regression: duplicate keys in canonical snapshot must be rejected."""
+    with pytest.raises(TypeError, match="duplicate"):
+        canonical_fingerprint((("a", 1), ("a", 2)))
+
+
+def test_duplicate_key_in_snapshot_rejected_by_revision() -> None:
+    """Regression: duplicate keys in canonical_snapshot must be rejected by revision."""
+    with pytest.raises(TypeError, match="duplicate"):
+        SignalRevision(
+            revision_id=uuid4(),
+            logical_signal_id=uuid4(),
+            revision_number=1,
+            previous_revision_id=None,
+            canonical_snapshot=(("a", 1), ("a", 2)),
+            fingerprint="ignored",
+            created_at_utc=datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
+        )
+
+
+def test_duplicate_key_in_event_payload_rejected() -> None:
+    """Regression: duplicate keys in event_payload must be rejected."""
+    identity = SignalIdentity(
+        logical_signal_id=uuid4(),
+        provider_identity=ProviderSource(provider_name="p", signal_reference="r"),
+    )
+    with pytest.raises(TypeError, match="duplicate"):
+        SignalEvent(
+            event_id=uuid4(),
+            signal_identity=identity,
+            event_type=EventType.REVISED,
+            timestamp_utc=datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
+            event_payload=(("a", 1), ("a", 2)),
+        )
+
+
+def test_duplicate_key_in_instruction_payload_rejected() -> None:
+    """Regression: duplicate keys in instruction payload must be rejected."""
+    identity = SignalIdentity(
+        logical_signal_id=uuid4(),
+        provider_identity=ProviderSource(provider_name="p", signal_reference="r"),
+    )
+    with pytest.raises(TypeError, match="duplicate"):
+        SignalInstruction(
+            instruction_type=InstructionType.MODIFY,
+            signal_identity=identity,
+            created_at_utc=datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
+            payload=(("a", 1), ("a", 2)),
+        )
+
+
+# ------------------------------------------------------------------
+# Regression: canonical_fingerprint and SignalRevision must share the
+# same supported-type contract. fingerprint must not accept types
+# that SignalRevision rejects.
+# ------------------------------------------------------------------
+
+
+# Types allowed in ALLOWED_SNAPSHOT_TYPES (used by both fingerprint and revision)
+FINGERPRINT_REVISION_ACCEPTED_ENUMS = [
+    ("TradeDirection", TradeDirection),
+    ("EntryGeometry", EntryGeometry),
+    ("EntryTrigger", EntryTrigger),
+    ("LifecycleState", LifecycleState),
+    ("SignalStatus", SignalStatus),
+]
+
+
+# Types present in domain enums but NOT in ALLOWED_SNAPSHOT_TYPES
+FINGERPRINT_REVISION_REJECTED_ENUMS = [
+    ("SourceType", SourceType),
+    ("EventType", EventType),
+    ("InstructionType", InstructionType),
+    ("AssetClass", AssetClass),
+]
+
+
+@pytest.mark.parametrize(
+    "label,enum_cls",
+    [pytest.param(l, c, id=l) for l, c in FINGERPRINT_REVISION_ACCEPTED_ENUMS],
+)
+def test_fingerprint_accepts_allowed_enum(label: str, enum_cls: object) -> None:
+    """Regression: fingerprint must accept all enums in ALLOWED_SNAPSHOT_TYPES."""
+    member = next(iter(enum_cls))  # type: ignore[attr-defined]
+    snapshot = (("field", member),)
+    fp = canonical_fingerprint(snapshot)
+    assert isinstance(fp, str)
+    assert len(fp) == 64
+
+
+@pytest.mark.parametrize(
+    "label,enum_cls",
+    [pytest.param(l, c, id=l) for l, c in FINGERPRINT_REVISION_REJECTED_ENUMS],
+)
+def test_fingerprint_rejects_enum_not_in_contract(label: str, enum_cls: object) -> None:
+    """Regression: fingerprint must reject enums not in ALLOWED_SNAPSHOT_TYPES.
+
+    The fingerprint and the SignalRevision validator must share the same
+    accepted-type contract. The fingerprint may NOT silently normalize an
+    enum type that SignalRevision will reject on construction.
+    """
+    member = next(iter(enum_cls))  # type: ignore[attr-defined]
+    snapshot = (("field", member),)
+    with pytest.raises(TypeError, match="unsupported"):
+        canonical_fingerprint(snapshot)

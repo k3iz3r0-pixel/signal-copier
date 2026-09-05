@@ -779,22 +779,44 @@ Event sequence rules (proposed invariants, not enforced):
 - CREATED must be first for a signal_identity.
 - CANCELLED can occur after ACTIVE; once CANCELLED, no ACTIVE/EXECUTING
   events allowed (ARCHIVED allowed as terminal).
-- REVISED requires previous ACTIVE or MODIFIED; produces new revision.
+- REVISED requires previous ACTIVE; produces new revision.
+  (Historical note: the early draft said "REVISED requires previous ACTIVE
+  or MODIFIED" — that wording is superseded. The MODIFIED event type was
+  removed and REVISED now covers all revision-producing changes; see
+  Section 3.10, Section 14, and the final paragraph of Section 31.)
 - EXECUTING requires ACTIVE; EXECUTED requires EXECUTING.
 - INCOMPLETE_SIGNAL_RECEIVED allowed only in DRAFT or ACTIVE; does not
   transition state alone.
 
 ## 13. Signal Revision Model
 
+> **STATUS: HISTORICAL / SUPERSEDED — NOT AUTHORITATIVE**
+>
+> The authoritative SignalRevision definition is Section 3.12 of this
+> document. Section 13 retains an earlier draft that used the field names
+> `snapshot_reference` and `key_snapshot_fields`. Those field names have
+> been removed from the canonical model; the authoritative fields are
+> `canonical_snapshot` (a frozen mapping of `(str, object)` pairs
+> containing the full semantic state of the Signal at revision time) and
+> `event_reference_id` (a reference to the producing SignalEvent by ID).
+> This section is preserved only for the audit trail of how the model
+> evolved. Do not implement against Section 13.
+
 SignalRevision fields (deeply immutable, no embedded recursive objects):
+
+> The list below is HISTORICAL and DOES NOT MATCH the implementation.
+> See Section 3.12 for the authoritative field list.
+
 - revision_id: UUID.
 - signal_identity: SignalIdentity (shared across revisions; same logical
   signal identity).
 - previous_revision_id: Optional[UUID]; None only for first revision.
 - snapshot_reference: Optional[UUID] (optional reference to persistent
   snapshot store; Phase 1 reserves this; not an embedded Signal object).
+  [Historical field name; replaced by `canonical_snapshot` in §3.12.]
 - key_snapshot_fields: frozen_mapping_type (optional frozen mapping of
   audit-relevant fields at revision time; never embeds a full Signal).
+  [Historical field name; replaced by `canonical_snapshot` in §3.12.]
 - event_reference_id: Optional[UUID] (reference to SignalEvent by event_id;
   not embedded SignalEvent).
 - created_at_utc: datetime.
@@ -803,7 +825,8 @@ Chain properties:
 - Revisions form a singly-linked list via previous_revision_id; no
   branching; no gaps.
 - Replay/reconstruction: traverse revisions by ID references; apply
-  key_snapshot_fields and event payload for full audit; no recursive
+  `canonical_snapshot` (the authoritative field; historical name was
+  `key_snapshot_fields`) and event payload for full audit; no recursive
   Signal embedding.
 - Deduplication compares SignalIdentity (logical signal) + fingerprint
   (canonical content); revisions themselves are not compared for identity.
